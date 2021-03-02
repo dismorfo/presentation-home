@@ -58,58 +58,64 @@
         </template>
         <template v-slot:cell(title)="data">
           <div class="d-inline-block text-truncate" style="max-width: 250px;">
-            <a v-b-tooltip.hover :title="data.item.title" :href="data.item.presentation">
+            <span v-b-tooltip.hover :title="data.item.title">
               {{ data.item.title }}
-            </a>
+            </span>
           </div>
         </template>
         <template v-slot:cell(collections)="data">
-          <a
-            v-b-tooltip.hover
-            :title="collection.name"
+          <div
             v-for="collection in data.item.collections"
             :key="collection.code"
+            class="d-inline-block text-truncate"
+            style="max-width: 250px;"
           >
-            {{ collection.code }}
-          </a>
+            <a v-b-tooltip.hover :title="collection.name">
+              {{ collection.name }}
+            </a>
+          </div>
         </template>
         <template v-slot:cell(partners)="data">
-          <a
-            v-b-tooltip.hover
-            :title="partner.name"
+          <div
+            class="d-inline-block text-truncate"
+            style="max-width: 250px;"
             v-for="partner in data.item.partners"
             :key="partner.code"
           >
-            {{ partner.code }}
-          </a>
+            <a v-b-tooltip.hover :title="partner.name">
+              {{ partner.name }}
+            </a>
+          </div>
         </template>
         <template v-slot:cell(mirador)="data">
           <b-dropdown id="dropdown-1" text="View" class="m-md-2">
-            <b-dropdown-item>
-              <router-link :to="`/${data.item.contentType}/${data.item.identifier}/1`">
-                Mirador with minimal custom configuration
-              </router-link>
+            <b-dropdown-item
+              :href="`/${data.item.contentType}/${data.item.identifier}/1`"
+              target="_blank"
+            >
+              Mirador with minimal custom configuration
             </b-dropdown-item>
-            <b-dropdown-item>
-              <router-link :to="`/mirador/${data.item.contentType}/${data.item.identifier}`">
-                Mirador "out of the box"
-              </router-link>
+            <b-dropdown-item
+              :href="
+                `https://dev-sites.dlib.nyu.edu/viewer/${data.item.contentType}/${data.item.identifier}/1`
+              "
+              target="_blank"
+            >
+              DLTS Viewer
             </b-dropdown-item>
-            <b-dropdown-item>
-              <a :href="data.item.presentation">
-                IIIF Presentation v3 Manifest
-              </a>
+            <b-dropdown-item :href="data.item.presentation" target="_blank">
+              IIIF Presentation v3 Manifest
             </b-dropdown-item>
           </b-dropdown>
         </template>
       </b-table>
       <b-pagination
+        v-if="items.length > 0"
         align="center"
-        v-model="currentPage"
+        v-model="currentPagerPage"
         :total-rows="totalRows"
         :per-page="perPage"
         aria-controls="items"
-        @input="fetchResource"
       ></b-pagination>
     </div>
   </div>
@@ -153,10 +159,17 @@ interface Field {
   sortable: boolean;
 }
 
-@Component({
-  components: {},
-})
-export default class Home extends Vue {
+// Define the props by using Vue's canonical way.
+const HomeProps = Vue.extend({
+  props: {
+    currentPage: {
+      type: Number,
+    },
+  },
+});
+
+@Component
+export default class Home extends HomeProps {
   title: string = 'List of resources';
 
   timeoutID: number = 0;
@@ -170,8 +183,6 @@ export default class Home extends Vue {
   collectionsUrl: string = 'https://dev-sites.dlib.nyu.edu/viewer/api/v1/collections';
 
   totalRows: number = 0;
-
-  currentPage: number = 1;
 
   rows: number = 0;
 
@@ -204,24 +215,24 @@ export default class Home extends Vue {
 
   fields: Array<Field> = [
     {
-      label: 'Manifest',
+      label: 'Title',
       key: 'title',
       sortable: false,
     },
     {
       label: 'Type',
       key: 'type',
-      sortable: false,
+      sortable: true,
     },
     {
       label: 'Collection',
       key: 'collections',
-      sortable: false,
+      sortable: true,
     },
     {
       label: 'Partner',
       key: 'partners',
-      sortable: false,
+      sortable: true,
     },
     {
       label: 'Options',
@@ -231,8 +242,26 @@ export default class Home extends Vue {
   ];
 
   private mounted(): void {
-    this.fetchResource();
     this.fetchCollections();
+    this.fetchResource();
+  }
+
+  get currentPagerPage(): number {
+    return this.currentPage;
+  }
+
+  set currentPagerPage(page: number) {
+    this.onPagerPageSelect(page.toString());
+  }
+
+  private onPagerPageSelect(selectedPage: string): void {
+    this.$router.push({
+      path: this.$router.currentRoute.path,
+      query: {
+        page: selectedPage,
+      },
+    });
+    this.fetchResource();
   }
 
   private onCollectionChange(newValue: string): void {
@@ -244,6 +273,9 @@ export default class Home extends Vue {
       if (params[1]) {
         this.partner = params[1];
       }
+    } else {
+      this.collection = '';
+      this.partner = '';
     }
     this.fetchResource();
   }
@@ -273,7 +305,6 @@ export default class Home extends Vue {
   @Watch('filter')
   onPropertyChanged() {
     clearTimeout(this.timeoutID);
-    const vm = this;
     this.timeoutID = setTimeout(() => {
       this.fetchResource();
     }, 500);
@@ -285,8 +316,6 @@ export default class Home extends Vue {
     let url = `${this.iiifEndpoint}?start=${this.perPage * this.currentPage - this.perPage}&rows=${
       this.perPage
     }`;
-
-    vm.items = [];
 
     if (0 !== this.filter.length) {
       url = `${url}&searchTerm=${this.filter}`;
@@ -306,10 +335,9 @@ export default class Home extends Vue {
       })
       .then((data: any) => {
         vm.totalRows = parseInt(data.response.numFound, 10);
+        vm.items = [];
         data.response.docs.map((doc: any) => {
           const contentType = `${doc.type.replace('_set', '')}s`;
-
-          console.log(contentType);
           const resource = {
             title: doc.title,
             identifier: doc.identifier,

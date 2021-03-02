@@ -11,6 +11,9 @@ export default new Router({
       path: '/',
       name: 'home',
       component: () => import(/* webpackChunkName: "home" */ './views/Home.vue'),
+      props: route => ({
+        currentPage: route.query.page ? Number(route.query.page) : 1,
+      }),
     },
     {
       path: '/:resource/:identifier/:sequence',
