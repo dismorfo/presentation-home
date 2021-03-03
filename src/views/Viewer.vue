@@ -41,11 +41,11 @@ export default class Viewer extends ViewerProps {
     this.mirador = mirador.viewer({
       id: 'my-mirador',
       workspaceControlPanel: {
-        enabled: false,
+        // enabled: false,
       },
       workspace: {
-        isWorkspaceAddVisible: false,
-        allowNewWindows: false,
+        // isWorkspaceAddVisible: false,
+        // allowNewWindows: false,
       },
       language: 'en',
       windows: [
@@ -56,11 +56,11 @@ export default class Viewer extends ViewerProps {
         },
       ],
       window: {
-        allowClose: false,
-        defaultSideBarPanel: 'info',
-        sideBarOpenByDefault: true,
-        showLocalePicker: true,
-        hideWindowTitle: true,
+        // allowClose: false,
+        // defaultSideBarPanel: 'info',
+        // sideBarOpenByDefault: true,
+        // showLocalePicker: true,
+        // hideWindowTitle: true,
       },
     });
   }
