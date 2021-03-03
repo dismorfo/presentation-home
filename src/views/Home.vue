@@ -58,7 +58,12 @@
           </div>
         </template>
         <template v-slot:cell(thumbnail)="data">
-          <img v-b-tooltip.hover :title="data.item.title" :src="data.item.thumbnail" />
+          <img
+            loading="lazy"
+            v-b-tooltip.hover
+            :title="data.item.title"
+            :src="data.item.thumbnail"
+          />
         </template>
         <template v-slot:cell(title)="data">
           <div class="d-inline-block text-truncate" style="max-width: 250px;">
@@ -221,7 +226,7 @@ export default class Home extends HomeProps {
 
   selectedCollection: string = 'null';
 
-  perPage: number = 25;
+  perPage: number = 50;
 
   isBusy: boolean = true;
 
