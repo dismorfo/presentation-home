@@ -2,6 +2,7 @@
   <div class="main container">
     <div class="mt-3 overflow-auto">
       <b-form-group
+        v-if="filter"
         label-cols-sm="0"
         label-align-sm="left"
         label-for="filterInput"
@@ -56,6 +57,9 @@
             <strong>{{ loadingMessage }}</strong>
           </div>
         </template>
+        <template v-slot:cell(thumbnail)="data">
+          <img v-b-tooltip.hover :title="data.item.title" :src="data.item.thumbnail" />
+        </template>
         <template v-slot:cell(title)="data">
           <div class="d-inline-block text-truncate" style="max-width: 250px;">
             <span v-b-tooltip.hover :title="data.item.title">
@@ -96,9 +100,7 @@
               Mirador with minimal custom configuration
             </b-dropdown-item>
             <b-dropdown-item
-              :href="
-                `https://dev-sites.dlib.nyu.edu/viewer/${data.item.contentType}/${data.item.identifier}/1`
-              "
+              :href="`${viewer}s/${data.item.contentType}/${data.item.identifier}/1`"
               target="_blank"
             >
               DLTS Viewer
@@ -123,8 +125,6 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-
-const baseUrl: string = process.env.BASE_URL;
 
 interface Resource {
   title: string;
@@ -159,11 +159,19 @@ interface Field {
   sortable: boolean;
 }
 
+interface ContentTypes {
+  label: string;
+  machine: string;
+}
+
 // Define the props by using Vue's canonical way.
 const HomeProps = Vue.extend({
   props: {
     currentPage: {
       type: Number,
+    },
+    selectedType: {
+      type: String,
     },
   },
 });
@@ -176,11 +184,32 @@ export default class Home extends HomeProps {
 
   loadingMessage: string = 'Loading resources...';
 
-  presentation: string = 'https://dev-sites.dlib.nyu.edu/viewer/api/presentation';
+  viewer: string = `${process.env.VUE_APP_VIEWER}`;
 
-  iiifEndpoint: string = 'https://dev-sites.dlib.nyu.edu/viewer/api/v1/objects';
+  presentation: string = `${process.env.VUE_APP_VIEWER}/api/presentation`;
 
-  collectionsUrl: string = 'https://dev-sites.dlib.nyu.edu/viewer/api/v1/collections';
+  iiifEndpoint: string = `${process.env.VUE_APP_VIEWER}/api/v1/objects`;
+
+  collectionsUrl: string = `${process.env.VUE_APP_VIEWER}/api/v1/collections`;
+
+  types: Array<ContentTypes> = [
+    {
+      label: 'All',
+      machine: '*',
+    },
+    {
+      label: 'Books',
+      machine: 'dlts_book',
+    },
+    {
+      label: 'Maps',
+      machine: 'dlts_map',
+    },
+    {
+      label: 'Photos',
+      machine: 'dlts_photo_set',
+    },
+  ];
 
   totalRows: number = 0;
 
@@ -192,7 +221,7 @@ export default class Home extends HomeProps {
 
   selectedCollection: string = 'null';
 
-  perPage: number = 10;
+  perPage: number = 25;
 
   isBusy: boolean = true;
 
@@ -215,24 +244,29 @@ export default class Home extends HomeProps {
 
   fields: Array<Field> = [
     {
+      label: 'Cover',
+      key: 'thumbnail',
+      sortable: false,
+    },
+    {
       label: 'Title',
       key: 'title',
       sortable: false,
     },
     {
       label: 'Type',
-      key: 'type',
-      sortable: true,
+      key: 'contentType',
+      sortable: false,
     },
     {
       label: 'Collection',
       key: 'collections',
-      sortable: true,
+      sortable: false,
     },
     {
       label: 'Partner',
       key: 'partners',
-      sortable: true,
+      sortable: false,
     },
     {
       label: 'Options',
@@ -255,11 +289,15 @@ export default class Home extends HomeProps {
   }
 
   private onPagerPageSelect(selectedPage: string): void {
+    const query: any = {
+      page: selectedPage,
+    };
+    if (this.selectedType !== '*') {
+      query.type = this.selectedType;
+    }
     this.$router.push({
       path: this.$router.currentRoute.path,
-      query: {
-        page: selectedPage,
-      },
+      query: query,
     });
     this.fetchResource();
   }
@@ -313,18 +351,21 @@ export default class Home extends HomeProps {
   private fetchResource(): void {
     const vm = this;
     this.isBusy = true;
-    let url = `${this.iiifEndpoint}?start=${this.perPage * this.currentPage - this.perPage}&rows=${
-      this.perPage
-    }`;
+    const start = this.perPage * this.currentPage - this.perPage;
+    let url = `${this.iiifEndpoint}?rows=${this.perPage}&start=${start}`;
 
     if (0 !== this.filter.length) {
       url = `${url}&searchTerm=${this.filter}`;
     }
+
     if (0 !== this.collection.length) {
       url = `${url}&collection=${this.collection}`;
     }
     if (0 !== this.partner.length) {
       url = `${url}&partner=${this.partner}`;
+    }
+    if (this.selectedType !== '*') {
+      url = `${url}&type=${this.selectedType}`;
     }
     fetch(url)
       .then((response: Response) => {
@@ -347,6 +388,7 @@ export default class Home extends HomeProps {
             contentType: contentType,
             collections: doc.collections,
             partners: doc.partners,
+            thumbnail: `${this.viewer}/api/image/${contentType}/${doc.identifier}/1/full/50,/0/default.jpg`,
           };
           vm.items.push(resource);
         });

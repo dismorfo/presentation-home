@@ -13,6 +13,7 @@ export default new Router({
       component: () => import(/* webpackChunkName: "home" */ './views/Home.vue'),
       props: route => ({
         currentPage: route.query.page ? Number(route.query.page) : 1,
+        selectedType: route.query.type ? route.query.type : '*',
       }),
     },
     {

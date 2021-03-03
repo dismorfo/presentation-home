@@ -28,7 +28,7 @@ const ViewerProps = Vue.extend({
 
 @Component
 export default class Viewer extends ViewerProps {
-  api: string = 'https://dev-sites.dlib.nyu.edu/viewer/api';
+  api: string = `${process.env.VUE_APP_VIEWER}/api`;
 
   // @ts-ignore
   manifest: string = `${this.api}/presentation/${this.resource}/${this.identifier}/manifest.json`;
@@ -56,6 +56,7 @@ export default class Viewer extends ViewerProps {
         },
       ],
       window: {
+        allowClose: false,
         defaultSideBarPanel: 'info',
         sideBarOpenByDefault: true,
         showLocalePicker: true,

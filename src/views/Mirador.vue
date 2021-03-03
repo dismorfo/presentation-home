@@ -24,7 +24,7 @@ const MiradorProps = Vue.extend({
 
 @Component
 export default class Mirador extends MiradorProps {
-  api: string = 'https://dev-sites.dlib.nyu.edu/viewer/api';
+  api: string = `${process.env.VUE_APP_VIEWER}/api`;
 
   mirador: any = '';
 
