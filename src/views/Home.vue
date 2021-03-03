@@ -97,7 +97,7 @@
               :href="`/${data.item.contentType}/${data.item.identifier}/1`"
               target="_blank"
             >
-              Mirador with minimal custom configuration
+              Mirador
             </b-dropdown-item>
             <b-dropdown-item
               :href="`${viewer}s/${data.item.contentType}/${data.item.identifier}/1`"
