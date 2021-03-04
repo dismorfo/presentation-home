@@ -7,6 +7,9 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import mirador from 'mirador';
+import miradorImageToolsPlugin from 'mirador-image-tools/es/plugins/miradorImageToolsPlugin.js';
+
+const miradorPlugins = [...miradorImageToolsPlugin];
 
 // Define the props by using Vue's canonical way.
 const ViewerProps = Vue.extend({
@@ -38,31 +41,36 @@ export default class Viewer extends ViewerProps {
   seq_index: number = this.sequence;
 
   private mounted(): void {
-    this.mirador = mirador.viewer({
-      id: 'my-mirador',
-      workspaceControlPanel: {
-        // enabled: false,
-      },
-      workspace: {
-        // isWorkspaceAddVisible: false,
-        // allowNewWindows: false,
-      },
-      language: 'en',
-      windows: [
-        {
-          loadedManifest: this.manifest,
-          canvasIndex: this.seq_index - 1,
-          view: 'single',
+    this.mirador = mirador.viewer(
+      {
+        id: 'my-mirador',
+        workspaceControlPanel: {
+          enabled: false,
         },
-      ],
-      window: {
-        // allowClose: false,
-        // defaultSideBarPanel: 'info',
-        // sideBarOpenByDefault: true,
-        // showLocalePicker: true,
-        // hideWindowTitle: true,
+        workspace: {
+          isWorkspaceAddVisible: false,
+          allowNewWindows: false,
+        },
+        language: 'en',
+        windows: [
+          {
+            imageToolsEnabled: true,
+            imageToolsOpen: false,
+            loadedManifest: this.manifest,
+            canvasIndex: this.seq_index - 1,
+            view: 'single',
+          },
+        ],
+        window: {
+          allowClose: false,
+          defaultSideBarPanel: 'info',
+          sideBarOpenByDefault: true,
+          showLocalePicker: true,
+          hideWindowTitle: true,
+        },
       },
-    });
+      miradorPlugins,
+    );
   }
 }
 </script>
